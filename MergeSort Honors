@@ -1,0 +1,302 @@
+## Ariel Lasry ##
+## Mergesort ##
+
+	.data
+list:  		.word  		15, 4, -19, 12, 2, -3, 13, 8, 23, 9, 11, -4, 2, 7, -21
+size:		.word		15	#Array size
+templist:		.space		60	#Temporary array
+endline:		.asciiz 		"\n"      	
+comp:		.asciiz		"The number of comparisons made was: "		
+prompt:		.asciiz		"Enter an integer\n"	
+exited:		.asciiz 		"Program has exited\n"
+
+	.text
+main:
+	# Run Merge_Sort
+	la	$a0, list		#load address of list into $a0	
+	lw	$a1, size		#load size into $a1
+	li	$v1, 0		#comp_m
+	jal	Merge_Sort	#call Merge_Sort
+	move	$t0, $v1		#copy $v1 to $t0
+
+	# Print the number of comparisons made	
+	la	$a0, comp		#load comp to $a0
+	jal	prints		#call prints
+	addi	$sp, $sp, -4	#allocate 4 bytes to the stack
+	sw	$t0, ($sp)	#store $t0 in $sp
+	jal	printi		#call printi
+	jal	endl		#call endl
+	addi	$sp, $sp, 4	#deallocate 4 bytes
+	
+	# Print the sorted array
+printsort:
+	la	$t3, list		#load list into $t3
+	lw	$a1, size		#load size into $a1
+	li	$t2, 0		#load 0 into $t2
+		
+printloop:
+	addi	$t2, $t2, 1	#increment counter by 1
+	bgt	$t2, $a1, exit	#branch if $t2 == $a1		
+	lw	$t0, ($t3)	#store value at $t3 into $t0
+	addi	$t3, $t3, 4	#increment array address by 4	
+	addi	$sp, $sp, -4	#allocate 4 bytes to the stack
+	sw	$t0, ($sp)	#store $t0 in $sp
+	jal	printi		#call printi
+	jal	endl		#call endl
+	addi	$sp, $sp, 4	#deallocate 4 bytes	
+	b 	printloop		#branch to printloop
+	
+	# Exit the program
+exit:
+	la	$a0, exited	#load exited into $a0
+	jal	prints		#call prints
+	li	$v0, 10		#load exit
+	syscall
+
+##Functions##
+
+##Jump and Return##
+return: 
+	jr	$ra
+
+##Merge_Sort Function##
+Merge_Sort:
+	addi	$sp, $sp, -36	#allocate 36 bytes to the stack
+	sw	$ra, ($sp)	#store $ra in $sp
+	sw	$s0, 4($sp)	#store $s0 in $sp offset 4
+	sw	$s1, 8($sp)	#store $s1 in $sp offset 8
+	sw	$s2, 12($sp)	#store $s2 in $sp offset 12
+	sw	$a0, 16($sp)	#store $a0 in $sp offset 16
+	sw	$s4, 20($sp)	#store $s4 in $sp offset 20
+	sw	$s5, 24($sp)	#store $s5 in $sp offset 24
+	sw	$s6, 28($sp)	#store $s6 in $sp offset 28
+	sw	$a1, 32($sp)	#store $a1 in $sp offset 32
+	
+	lw	$s2, 32($sp)	#n	load into $s2 from $sp offset 32
+	li	$s4, 0		#left
+	li	$s5, 0 		#mid
+	li	$s6, 0 		#right
+	li	$s0, 1		#sub_n = 1
+	
+	# Outer Loop	
+loop:
+	bge	$s0, $s2, next	#branch if sub_n == n	
+	li	$s1, 0		#i
+	
+	# Inner Loop
+loop2:
+	bge	$s1, $s2, loopfin	#branch if i == n		
+	move	$s4, $s1		#left = i		
+	add	$t7, $s1, $s0	#$t7 = i + sub_n
+	ble	$t7, $s2, tern1	#branch if i + sub_n < n
+	move 	$s5, $s2		#mid = n
+	b	right		#branch
+	
+tern1:
+	move	$s5, $t7	#mid = i + sub_n
+	
+right:
+	sll	$t2, $s0, 1	#$t2 = 2 * sub_n
+	add	$t2, $t2, $s1	#$t2 = 2 * sub_n + i
+	ble	$t2, $s2, tern2	#branch if i + sub_n * 2 < n
+	move	$s6, $s2		#right = n
+	b	callmerge		#branch
+	
+tern2:
+	move	$s6, $t2		#right = i + sub_n * 2
+				
+callmerge:	
+	lw	$a0, 16($sp)	#a[]	load into $s0 from $sp offset 16
+	move	$a1, $s4		#left	move $s4 into $a1
+	move	$a2, $s5		#mid	move $s5 into $a2
+	move	$a3, $s6		#right	move $s6 into $a3
+	jal	merge		#call merge
+			
+	sll	$t9, $s0, 1	#sub_n *= 2	
+	add	$s1, $s1, $t9	#i += sub_n * 2
+	b 	loop2		#branch
+	# Inner Loop End
+	
+loopfin:
+	sll 	$s0, $s0, 1	#sub_n *= 2
+	b	loop		#branch
+	# Outer Loop End	
+		
+next:
+	lw	$ra, ($sp)	#load $ra from $sp
+	lw	$s0, 4($sp)	#load $s0 from $sp offset 4
+	lw	$s1, 8($sp)	#load $s0 from $sp offset 8
+	lw	$s2, 12($sp)	#load $s0 from $sp offset 12
+	lw	$s4, 20($sp)	#load $s0 from $sp offset 20
+	lw	$s5, 24($sp)	#load $s0 from $sp offset 24
+	lw	$s6, 28($sp)	#load $s0 from $sp offset 28
+	addi	$sp, $sp, 36	#deallocate 36 bytes to the stack
+	b	return		#branch
+	
+##End Function##
+
+##Merge Function##	
+merge:
+	addi	$sp, $sp, -36	#allocate 36 bytes to the stack
+	sw	$ra, ($sp)	#store $ra in $sp
+	sw	$s0, 4($sp)	#store $s0 in $sp offset 4
+	sw	$s1, 8($sp)	#store $s1 in $sp offset 8
+	sw	$s2, 12($sp)	#store $s2 in $sp offset 12
+	sw	$s3, 16($sp)	#store $s3 in $sp offset 16
+	sw	$s4, 20($sp)	#store $s4 in $sp offset 20
+	sw	$s5, 24($sp)	#store $s5 in $sp offset 24
+	sw	$s6, 28($sp)	#store $s6 in $sp offset 28
+	sw	$s7, 32($sp)	#store $s7 in $sp offset 32
+	
+	move	$s0, $a0		#a[]		move $a0 into $s0
+	la	$s7, templist	#t[] 		load templist into $s7
+	move	$s1, $a1		#left_n		move $a1 into $s1
+	move	$s2, $a2		#mid_n		move $a2 into $s2
+	move	$s3, $a3		#right_n 	move $a3 into $s3
+	move	$s4, $s1		#t_index = left_n
+	move	$s5, $s1		#left_index = left_n
+	move	$s6, $s2		#right_index = mid_n
+	
+	# First while loop
+while1:
+	slt	$t7, $s5, $s2	#if left_index < mid_n, $t7 = true 
+	slt	$t8, $s6, $s3	#if right_index < right_n $t8 = true
+	and	$t7, $t7, $t8	#$t7 = true if bitwise and $t7 and $t8 = 1
+	bne	$t7, 1, while2	#branch if $t7 != 1
+	
+	sll	$t9, $s5, 2	#$t9 = left_index * 4
+	move	$t0, $s0		#$t0 = a[]
+	add	$t0, $t0, $t9	#point $t0 to a[left_index]
+	lw	$t1, ($t0)	#load a[left_index] into $t1
+		
+	sll	$t3, $s6, 2	#$t3 = right_index *4
+	move	$t0, $s0		#$t0 = a[]
+	add	$t0, $t0, $t3	#point $t7 to a[right_index]
+	lw	$t2, ($t0)	#load a[right_index] into $t2
+			
+	sll	$t8, $s4, 2	#$t8 = t_index * 4
+	move	$t5, $s7		#$t5 = t[]
+	add	$t5, $t5, $t8	#point $t5 to t[t_index]
+			
+	bge	$t1, $t2, else	#branch if a[left_index] > a[right_index]
+
+	sw	$t1, ($t5)	#store a[left_index] at t[t_index]
+	addi	$s5, $s5, 1	#increment left_index
+	b	finif		#branch
+			
+else:
+	sw	$t2, ($t5) 	#store a[right_index] at t[t_index]
+	addi	$s6, $s6, 1	#increment right_index
+	
+finif:
+	addi	$s4, $s4, 1	#increment t_index
+	addi	$v1, $v1, 1	#increment comp_m		
+	b	while1
+	# End first while loop
+	
+	# Second while loop		
+while2:
+	bge	$s5, $s2, while3	#branch if left_index > mid_n	
+	sll	$t8, $s4, 2	#$t8 = t_index * 4
+	move	$t5, $s7		#$t5 = t[]
+	add	$t5, $t5, $t8	#point $t5 to t[t_index]
+		
+	sll	$t9, $s5, 2	#$t9 = left_index * 4
+	move	$t0, $s0		#$t0 = a[]
+	add	$t0, $t0, $t9	#point $t0 to a[left_index]
+	lw	$t1, ($t0)	#load a[left_index] into $t1
+		
+	sw	$t1, ($t5)	#store a[left_index] at t[t_index]	
+	addi	$s5, $s5, 1	#increment left_index
+	addi	$s4, $s4, 1	#increment t_index	
+	b	while2		#branch
+	# End second while loop
+	
+	# Third while loop		
+while3:
+	bge	$s6, $s3, for	#branch if right_index > right_n
+	sll	$t8, $s4, 2	#$t8 = t_index * 4
+	move	$t5, $s7		#$t5 = t[]
+	add	$t5, $t5, $t8	#point $t5 to t[t_index]
+		
+	sll	$t3, $s6, 2	#$t3 = right_index *4
+	move	$t0, $s0		#$t7 = a[]
+	add	$t0, $t0, $t3	#point $t7 to a[right_index]
+	lw	$t2, ($t0)	#load a[right_index] into $t2
+		
+	sw	$t2, ($t5) 	#store a[right_index] at t[t_index]
+	addi	$s6, $s6, 1	#increment right_index
+	addi	$s4, $s4, 1	#increment t_index	
+	b	while3		#branch
+	# End third while loop
+	
+	# For loop
+for:	
+	move	$t4, $s1		#initialize i to left_n
+	
+forl:
+	bge	$t4, $s3, fin	#branch if i >=  right_n
+	sll	$t6, $t4, 2	#$t6 = i * 4
+	move	$t5, $s0		#$t5 = a[]
+	add	$t5, $t5, $t6	#point $t5 to a[i]
+		
+	move	$t3, $s7		#$t3 = t[]
+	add	$t3, $t3, $t6	#point $t3 to t[i]
+	lw	$t2, ($t3)	#load t[i] into $t2
+		
+	sw	$t2, ($t5)	#store t[i] at a[i]
+	addi	$t4, $t4, 1	#increment i
+	b	forl		#branch
+	# End for loop
+	
+	# Prepare to return from function																
+fin:	
+	lw	$ra, ($sp)	#load $ra from $sp
+	lw	$s0, 4($sp)	#load $s0 from $sp offset 4
+	lw	$s1, 8($sp)	#load $s0 from $sp offset 8
+	lw	$s2, 12($sp)	#load $s0 from $sp offset 12
+	lw	$s3, 16($sp)	#load $s0 from $sp offset 16
+	lw	$s4, 20($sp)	#load $s0 from $sp offset 20
+	lw	$s5, 24($sp)	#load $s0 from $sp offset 24
+	lw	$s6, 28($sp)	#load $s0 from $sp offset 28
+	lw	$s7, 32($sp)	#load $s0 from $sp offset 32
+	addi	$sp, $sp, 36	#deallocate 36 bytes to the stack
+	b	return
+	
+##End Merge Function##
+
+##Other Functions##	
+readi:
+	li	$v0, 5		#load read int into $v0
+	syscall	
+	b	return		#return
+	
+prints:
+	li	$v0, 4		#load print string
+	syscall
+	b	return		#return
+	
+printi:
+	lw	$a0, ($sp)	#load into $a0 from $sp
+	li	$v0, 1		#load print int
+	syscall
+	b	return		#return
+	
+endl:
+	addi	$sp, $sp, -4	#allocate 4 bytes to the stack
+	sw	$ra, ($sp)	#store $ra in $sp offset 4
+	
+	la	$a0, endline	#load endline into $a0
+	jal	prints		#call prints
+	
+	lw	$ra, ($sp)	#load $ra from $sp offset 4
+	addi	$sp, $sp, 4	#deallocate 4 bytes
+	b	return		#return
+	
+	
+		
+
+
+	
+			
+	
