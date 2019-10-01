@@ -1,6 +1,7 @@
 ## Ariel Lasry ##
 ## Mergesort ##
-
+## This program uses the Merge Sort algorithm to recursively sort an array of integers, ##
+## printing the sorted list, and number of iterations required to complete the sort. ##
 	.data
 list:  		.word  		15, 4, -19, 12, 2, -3, 13, 8, 23, 9, 11, -4, 2, 7, -21
 size:		.word		15	#Array size
